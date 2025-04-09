@@ -164,6 +164,32 @@ const matchesSearchOptions = (
 	);
 };
 
+/**
+ * エラーに寛容に正規表現を構築する
+ * @param keyword
+ */
+const buildRegExp = (keyword: string): RegExp | string => {
+	try {
+		return new RegExp(keyword, "i");
+	} catch {
+		return keyword;
+	}
+}
+
+/**
+ * エラーに寛容にマッチ検索する
+ * @param base
+ * @param regex
+ */
+const matchesSoftly = (base: string, regex: string | RegExp): RegExpMatchArray | null => {
+	// 不正な正規表現等によってエラーが起きれば，単純に文字列どうしの部分一致をとる
+	try {
+		return base.match(regex);
+	} catch {
+		return base.includes(typeof regex === 'string' ? regex : regex.source) ? [base] : null;
+	}
+}
+
 const matchesKeyword = (subject: Subject, options: SearchOptions) => {
 	// 何の条件も設定されていない場合は true
 	if (
@@ -182,14 +208,14 @@ const matchesKeyword = (subject: Subject, options: SearchOptions) => {
 		return true;
 	}
 
-	const regex = new RegExp(options.keyword, "i");
+	const regex = buildRegExp(options.keyword);
 
 	// 科目番号は前方一致
 	const matchesCode =
 		options.containsCode && subject.code.startsWith(options.keyword);
 
-	const matchesName = options.containsName && subject.name.match(regex);
-	const matchesRoom = options.containsRoom && subject.room.match(regex);
+	const matchesName = options.containsName && matchesSoftly(subject.name, regex);
+	const matchesRoom = options.containsRoom && matchesSoftly(subject.room, regex);
 
 	// 教員名はスペースを無視して検索
 	// すなわち、"情報太郎" または "情報　太郎" で検索した場合も、"情報 太郎" にヒットさせる
@@ -200,8 +226,8 @@ const matchesKeyword = (subject: Subject, options: SearchOptions) => {
 			.match(new RegExp(options.keyword.replace(/[ 　]/, ""), "i")) != null;
 
 	const matchesAbstract =
-		options.containsAbstract && subject.abstract.match(regex);
-	const matchesNote = options.containsNote && subject.note.match(regex);
+		options.containsAbstract && matchesSoftly(subject.abstract, regex);
+	const matchesNote = options.containsNote && matchesSoftly(subject.note, regex);
 
 	return (
 		matchesCode ||
