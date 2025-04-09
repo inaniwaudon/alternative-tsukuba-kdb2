@@ -164,6 +164,9 @@ const matchesSearchOptions = (
 	);
 };
 
+/** 失敗した正規表現のキャッシュ*/
+const regExpCaches: string[] = [];
+
 /**
  * エラーに寛容に正規表現を構築する
  * @param keyword
@@ -183,10 +186,18 @@ const buildRegExp = (keyword: string): RegExp | string => {
  */
 const matchesSoftly = (base: string, regex: string | RegExp): RegExpMatchArray | null => {
 	// 不正な正規表現等によってエラーが起きれば，単純に文字列どうしの部分一致をとる
+
+	// 失敗キャッシュがあればそれを返す
+	const keyword = typeof regex === 'string' ? regex : regex.source;
+	if (regExpCaches.includes(regex as string)) {
+		return base.includes(regex as string) ? [base] : null;
+	}
+
 	try {
 		return base.match(regex);
 	} catch {
-		return base.includes(typeof regex === 'string' ? regex : regex.source) ? [base] : null;
+		regExpCaches.push(keyword);
+		return base.includes(keyword) ? [base] : null;
 	}
 }
 
