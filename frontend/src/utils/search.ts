@@ -221,9 +221,7 @@ const matchesKeyword = (subject: Subject, options: SearchOptions) => {
 	// すなわち、"情報太郎" または "情報　太郎" で検索した場合も、"情報 太郎" にヒットさせる
 	const matchesPerson =
 		options.containsPerson &&
-		subject.person
-			.replace(" ", "")
-			.match(new RegExp(options.keyword.replace(/[ 　]/, ""), "i")) != null;
+		matchesSoftly(subject.person.replace(" ", ""), buildRegExp(options.keyword.replace(/[ 　]/, ""))) != null;
 
 	const matchesAbstract =
 		options.containsAbstract && matchesSoftly(subject.abstract, regex);
